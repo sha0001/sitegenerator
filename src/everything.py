@@ -74,10 +74,11 @@ class LeafNode(HTMLnode):
 
 
 class ParentNode(HTMLnode): 
-    def __init__(self,tag,children,props=None): 
+    def __init__(self,tag,children,value=None, props=None): 
         self.tag = tag 
         self.children = children 
         self.props = props
+        self.value = value
 
     def to_html(self): 
         if not self.tag: 
@@ -117,8 +118,6 @@ def split_nodes_delimiter(old_nodes: list[TextNode], delimiter: str, text_type: 
 
         else: 
             split_node = node.text.split(delimiter) 
-            #if len(split_node) < 3: 
-             #   raise Exception('not valid markdown') 
             for i in range(0,len(split_node)): 
                 if i%2 == 0: 
                     typed_node.append(TextNode(split_node[i], TextType.TEXT))
@@ -202,7 +201,7 @@ def text_to_textnodes(text):
 
 
 
-def text_node_to_html_node(text_node: TextNode) -> LeafNode: 
+def node_to_html(text_node: TextNode) -> LeafNode: 
     if text_node.text_type == TextType.TEXT:
         return LeafNode(None,text_node.text)
     if text_node.text_type == TextType.BOLD: 
@@ -239,7 +238,7 @@ def block_to_block_type(block):
         return BlockType.CODE
 
     # > ...
-    if re.findall(r">\s?(.*)",block):
+    if  re.findall(r">\s?(.*)",block):
         return BlockType.QUOTE
 
     # - 
@@ -265,14 +264,11 @@ def markdown_to_html_node(markdown):
     for block in blocklist:
 
         #find block type
-        bt = block_to_blocktype(block)
+        bt = block_to_block_type(block)
 
         if bt == BlockType.CODE: 
-            #call helper function
+            node = code_to_html_node(block)
             
-            #remove code markers
-            stripped_block = re.findall(r"```[\s](.*)[\s]",block)
-            textnodelist.append(TextNode(stripped_block,TextType.CODE)
 
         if bt == BlockType.HEAD:            
             node = heading_to_html_node(block)
@@ -290,47 +286,67 @@ def markdown_to_html_node(markdown):
             node = para_to_html_node(block)
     
 
-        htmlnodelist.append(node)
+        htmlnodelist.append(node) 
 
+    final =ParentNode('div',htmlnodelist)
 
-    return ParentNode('div'
-
-        #Assign child HTMLNodes, use text_to_children below
-
-        #don't run codeblocks through text_to_children. Manually create TExtnode and use text_node_to_html_node
-
-# Make all block nodes children to a single parent HTML node <div></div> 
-
-
+    return final
 
 
 ### Boots says these sub function make the whole thing easier to understand. Makes sense.
 
 def para_to_html_node(block): 
-    #tag = 'p'
-    return
-
+    return ParentNode('p',node_to_html(text_to_textnodes(block.split('/n')[0])))
 def olist_to_html_node(block):
-    #tag = 'ol'
-    return
+    stripped_lines = re.findall(r"\d. (.*)",block)
+    nodelist = []
+    combined_block = '' 
+    for line in stripped_lines: 
+        nodelist.append(LeafNode('li',line))
+    return ParentNode('ol',nodelist)
 
 def ulist_to_html_node(block):
-    #tag = 'ul'
-    return
+    stripped_lines = re.findall(r"-\s?(.*)",block)
+    nodelist = []
+    combined_block = ''
+    for line in stripped_lines:
+        nodelist.append(LeafNode('li',line))
+    return ParentNode('ul',nodelist)
 
 def quote_to_html_node(block):
     #tag = 'blockquote'
-    return
+    stripped_lines = re.findall(r">\s?(.*)",block)
+    combined_block = ''
+    for line in stripped_lines: 
+        combined_block += f'{line}\n'
+    return LeafNode('blockquote', combined_block)
+
+def hashcount(block):
+    count = 0 
+    for char in block: 
+        if char == '#': 
+            if count != 0: 
+                return count
+        else: 
+            count += 1
+    raise Exception('no hashes found in heading block')  
+                      
 
 def heading_to_html_node(block):
-    return
-    
+    num_hashes = hashcount(block)
+    stripped_block_list = re.findall(r"# (.*)",block)
+    stripped_block = ''
+    for item in stripped_block_list: 
+        stripped_block += item
 
-    # the regex check below is apparently not great. Just use a normal loop instead. 
-    # count hashes
-    #hashes = re.findall(r"(?<!.)\s*(#{1,6}),block")
-    #hashcount = len(hashes)+1        
-    #tag = f'h{hashcount}'
-    # remove hashes
-    #stripped_block = re.findall(r"#{1,6}(.*)",block)
+    return LeafNode(f'h{num_hashes}',stripped_block)                
+    
+def code_to_html_node(block): 
+    #remove code markers
+    stripped_block_list = re.findall(r"````[\s]*(.*)[\s]*```",block)
+    stripped_block = ''
+    for item in stripped_block_list: 
+        stripped_block += item
+    return LeafNode('pre',LeafNode('code',stripped_block))
+
 
