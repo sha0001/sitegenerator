@@ -231,24 +231,24 @@ def markdown_to_blocks(markdown):
 def block_to_block_type(block): 
     
     # 0-6# ... \n 
-    if re.findall(r"(.{1,6}#) (.*)",markdown): 
+    if re.findall(r"(.{1,6}#) (.*)",block): 
         return BlockType.HEAD
 
     # ```\n ... ```
-    if re.findall(r"```\n[\s\S]*```",markdown):
+    if re.findall(r"```\n[\s\S]*```",block):
         return BlockType.CODE
 
     # > ...
-    if re.findall(r">\s?(.*)",markdown):
+    if re.findall(r">\s?(.*)",block):
         return BlockType.QUOTE
 
     # - 
-    if re.findall(r"- (.*)",markdown):
+    if re.findall(r"- (.*)",block):
         return BlockType.ULIST
 
     # 1.
     # Not bothering to check whether numbering is correct at this point
-    if re.findall(r"\d. (.*)",markdown): 
+    if re.findall(r"\d. (.*)",block): 
         return BlockType.OLIST
 
     else:
@@ -268,64 +268,32 @@ def markdown_to_html_node(markdown):
         bt = block_to_blocktype(block)
 
         if bt == BlockType.CODE: 
-        # special case - create manual text node 
-
-
-
-        else: 
-            if bt == BlockType.HEAD:            
-
-                # count hashes
-                hashes = re.findall(r"(?<!.)\s*(#{1,6}),block")
-                hashcount = len(hashes)+1
+            #call helper function
             
-                tag = f'h{hashcount}'
-            
-                # remove hashes
-                stripped_block = re.findall(r"#{1,6}(.*)",block)
+            #remove code markers
+            stripped_block = re.findall(r"```[\s](.*)[\s]",block)
+            textnodelist.append(TextNode(stripped_block,TextType.CODE)
 
-            
-            if bt == BlockType.QUOTE: 
-                tag = 'blockquote'
+        if bt == BlockType.HEAD:            
+            node = heading_to_html_node(block)
 
-                # remove >...
-                stripped_block = 
+        if bt == BlockType.QUOTE: 
+            node = quote_to_html_node(block)
 
-            if bt == BlockType.ULIST: 
-                tag = 'ul'
+        if bt == BlockType.ULIST: 
+            node = ulist_to_html_node(block)
 
-                # remove bullets
-                stripped_block =
+        if bt == BlockType.OLIST: 
+            node = olist_to_html_node(block)
 
+        if bt == BlockType.PARA: 
+            node = para_to_html_node(block)
+    
 
-            if bt == BlockType.OLIST: 
-                tag = 'ol'
-
-                # remove numbers
-                stripped block = 
-
-            if bt == BlockType.PARA: 
-        
-                tag = 'p'
-
-                #nothing to remove
-                stripped_block = block
-            
+        htmlnodelist.append(node)
 
 
-            text_to_textnodes(block))
-            
-
-        newtn = TextNode(text, TextType.CODE, 
-        
-
-        htmlnodelist.append(HTMLNode(
-        
     return ParentNode('div'
-
-        #Determine block type 
-
-        #for block type, create new HTMLNode
 
         #Assign child HTMLNodes, use text_to_children below
 
@@ -336,4 +304,33 @@ def markdown_to_html_node(markdown):
 
 
 
+### Boots says these sub function make the whole thing easier to understand. Makes sense.
+
+def para_to_html_node(block): 
+    #tag = 'p'
+    return
+
+def olist_to_html_node(block):
+    #tag = 'ol'
+    return
+
+def ulist_to_html_node(block):
+    #tag = 'ul'
+    return
+
+def quote_to_html_node(block):
+    #tag = 'blockquote'
+    return
+
+def heading_to_html_node(block):
+    return
+    
+
+    # the regex check below is apparently not great. Just use a normal loop instead. 
+    # count hashes
+    #hashes = re.findall(r"(?<!.)\s*(#{1,6}),block")
+    #hashcount = len(hashes)+1        
+    #tag = f'h{hashcount}'
+    # remove hashes
+    #stripped_block = re.findall(r"#{1,6}(.*)",block)
 
